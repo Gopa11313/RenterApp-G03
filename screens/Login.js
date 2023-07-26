@@ -5,8 +5,9 @@ import {
   TouchableOpacity,
   Image,
   StyleSheet,
+  SafeAreaView,
 } from "react-native";
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { db } from "../utlis/firebaseConfig";
 import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
 import { collection, addDoc, getDocs, query, where } from "firebase/firestore";
@@ -41,12 +42,24 @@ export default function Login({ navigation, route }) {
       console.log(querySnapshot.docs[0].data().type);
       if (querySnapshot.docs[0].data().type == "owner") {
         try {
-          await AsyncStorage.setItem("name", JSON.stringify(querySnapshot.docs[0].data().name));
-          await AsyncStorage.setItem("email", JSON.stringify(querySnapshot.docs[0].data().email));
-          await AsyncStorage.setItem("image", JSON.stringify(querySnapshot.docs[0].data().image));
-          await AsyncStorage.setItem("id", JSON.stringify(querySnapshot.docs[0].id));
+          await AsyncStorage.setItem(
+            "name",
+            JSON.stringify(querySnapshot.docs[0].data().name)
+          );
+          await AsyncStorage.setItem(
+            "email",
+            JSON.stringify(querySnapshot.docs[0].data().email)
+          );
+          await AsyncStorage.setItem(
+            "image",
+            JSON.stringify(querySnapshot.docs[0].data().image)
+          );
+          await AsyncStorage.setItem(
+            "id",
+            JSON.stringify(querySnapshot.docs[0].id)
+          );
         } catch (error) {
-          console.error('Error saving data:', error);
+          console.error("Error saving data:", error);
         }
         navigation.navigate("Dashboard");
       } else {
@@ -56,7 +69,7 @@ export default function Login({ navigation, route }) {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <Image source={require("../assets/logo.jpg")} style={styles.logo} />
       <Text style={styles.appName}>Your App Name</Text>
 
@@ -85,7 +98,7 @@ export default function Login({ navigation, route }) {
       <TouchableOpacity style={styles.loginButton} onPress={handleSignIn}>
         <Text style={styles.buttonText}>Login</Text>
       </TouchableOpacity>
-    </View>
+    </SafeAreaView>
   );
 }
 const styles = StyleSheet.create({
