@@ -20,6 +20,8 @@ export default function CreateListing({ navigation, route }) {
   const [licensePlate, setLicensePlate] = useState("");
   const [pickUpLocation,setPickUpLocation] =useState("")
   const [price,setPrice] =useState("")
+
+  const [images,setImages] = useState([])
   const [geocodedCoordinates, setGeocodedCoordinates] = useState({lat:0, lng:0});
   useEffect(() => {
     setName(item.make + " " + item.model + " " + item.trim);
@@ -28,18 +30,19 @@ export default function CreateListing({ navigation, route }) {
     setVehicleType(item.form_factor);
   }, []);
   const requestLocationPermission = async () => {
-    const { status } = await Permissions.askAsync(Permissions.LOCATION);
-    if (status === 'granted') {
-      // Location permission granted, call your geocoding function here
-      doForwardGeocode();
+    let { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== 'granted') {
+        alert(`Permission to access location was denied`)
+        return
     } else {
-      alert('Permission to access location denied.');
+        doForwardGeocode()
     }
   };
 
   const onPlus = () => {
     setSeatingCapacity(parseInt(seatingCapacity) + 1);
   };
+
   const onMinus = () => {
     if (seatingCapacity > 0) {
       setSeatingCapacity(parseInt(seatingCapacity) - 1);
@@ -54,14 +57,10 @@ export default function CreateListing({ navigation, route }) {
         if (result === undefined) {
             alert("No coordinates found")
             return
-        }
-        // 3. do something with results 
-        console.log(result)           
+        }         
         alert(JSON.stringify(result))
-        // update state variable to an object that contains the lat/lng
-        // (alternatively you could have created 2 separate state variables)
         setGeocodedCoordinates({lat: result.latitude, lng: result.longitude})
-console.Console(geocodedCoordinates)
+        console.log(geocodedCoordinates)
     } catch (err) {
         console.log(err)
     }
@@ -75,6 +74,7 @@ console.Console(geocodedCoordinates)
           horizontal
           keyExtractor={(image, index) => index.toString()}
           renderItem={({ item }) => (
+            // setImages(images.push(item.url_thumbnail))
             <Image
               source={{ uri: item.url_thumbnail }}
               style={style.thumbnail}
@@ -154,7 +154,7 @@ console.Console(geocodedCoordinates)
           keyboardType="numeric"
         />
       </View>
-    <Pressable onPress={doForwardGeocode}>
+    <Pressable onPress={requestLocationPermission}>
       <Text style ={style.btn}>Create Listing</Text>
       </Pressable>
     </View>
