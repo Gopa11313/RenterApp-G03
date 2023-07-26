@@ -9,8 +9,13 @@ import {
   FlatList,
   Pressable,
 } from "react-native";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AntDesign } from "@expo/vector-icons";
-import * as Location from 'expo-location';
+import * as Location from "expo-location";
+
+import { db } from "../../../utlis/firebaseConfig";
+import { collection, addDoc } from "firebase/firestore";
+
 export default function CreateListing({ navigation, route }) {
   const { item } = route.params;
   const [name, setName] = useState("");
@@ -18,24 +23,29 @@ export default function CreateListing({ navigation, route }) {
   const [hoursePower, setHoursePower] = useState("");
   const [vehicleType, setVehicleType] = useState("");
   const [licensePlate, setLicensePlate] = useState("");
-  const [pickUpLocation,setPickUpLocation] =useState("")
-  const [price,setPrice] =useState("")
+  const [pickUpLocation, setPickUpLocation] = useState("");
+  const [price, setPrice] = useState("");
 
-  const [images,setImages] = useState([])
-  const [geocodedCoordinates, setGeocodedCoordinates] = useState({lat:0, lng:0});
+  const [images, setImages] = useState([]);
+  const [geocodedCoordinates, setGeocodedCoordinates] = useState({
+    lat: 0,
+    lng: 0,
+  });
   useEffect(() => {
     setName(item.make + " " + item.model + " " + item.trim);
     setSeatingCapacity(item.seats_min);
     setHoursePower(item.horsepower);
     setVehicleType(item.form_factor);
+    requestLocationPermission();
+    item.images.forEach(element => {
+      setImages(images.push(element.url_thumbnail))
+    });
   }, []);
   const requestLocationPermission = async () => {
     let { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== 'granted') {
-        alert(`Permission to access location was denied`)
-        return
-    } else {
-        doForwardGeocode()
+    if (status !== "granted") {
+      alert(`Permission to access location was denied`);
+      return;
     }
   };
 
@@ -48,23 +58,49 @@ export default function CreateListing({ navigation, route }) {
       setSeatingCapacity(parseInt(seatingCapacity) - 1);
     }
   };
-  const doForwardGeocode = async () => {
-    alert("forward geocode button clicked")                  
+  const addData = async () => {
+    if(pickUpLocation !="" && licensePlate != ""){
     try {
-        console.log(`Attempting to geocode: ${pickUpLocation}`)
-        const geocodedLocation = await Location.geocodeAsync(pickUpLocation)
-        const result = geocodedLocation[0]
-        if (result === undefined) {
-            alert("No coordinates found")
-            return
-        }         
-        alert(JSON.stringify(result))
-        setGeocodedCoordinates({lat: result.latitude, lng: result.longitude})
-        console.log(geocodedCoordinates)
+      const value = await AsyncStorage.getItem("id");
+      const id = value ? JSON.parse(value) : null;
+
+      const geocodedLocation = await Location.geocodeAsync(pickUpLocation);
+      const result = geocodedLocation[0];
+      if (result === undefined) {
+        alert("No coordinates found, Please provide a valid address");
+        return;
+      }
+      setGeocodedCoordinates({ lat: result.latitude, lng: result.longitude });
+      console.log(setGeocodedCoordinates)
+      if(setGeocodedCoordinates.lat != 0 && setGeocodedCoordinates.lng !=0){
+      const listingItem = {
+        id: id,
+        name: name,
+        seatingCapacity: seatingCapacity,
+        horsepower: hoursePower,
+        vehicleType: vehicleType,
+        licensePlate: licensePlate,
+        pickUpLocation: pickUpLocation,
+        price: price,
+        images: images,
+        geocodedCoordinates: geocodedCoordinates,
+      };
+
+      const insertedDocument = await addDoc(
+        collection(db, "Listing"),
+        listingItem
+      );
+      alert(`SuccessFully Added`);
+      }else{
+        alert("Please provide a valid address")
+      }
     } catch (err) {
-        console.log(err)
+      console.log(err);
     }
-}
+  }else{
+    alert("Please Provide all requried data")
+  }
+  };
 
   return (
     <View style={style.continer}>
@@ -154,8 +190,8 @@ export default function CreateListing({ navigation, route }) {
           keyboardType="numeric"
         />
       </View>
-    <Pressable onPress={requestLocationPermission}>
-      <Text style ={style.btn}>Create Listing</Text>
+      <Pressable onPress={addData}>
+        <Text style={style.btn}>Create Listing</Text>
       </Pressable>
     </View>
   );
@@ -177,14 +213,14 @@ const style = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
   },
-  btn:{
-    alignItems:"center",
-    justifyContent:"center",
-    backgroundColor:"black",
-    color:'white',
+  btn: {
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "black",
+    color: "white",
 
-    borderRadius:10,
-    padding:10,
-    margin:10,
-  }
+    borderRadius: 10,
+    padding: 10,
+    margin: 10,
+  },
 });
