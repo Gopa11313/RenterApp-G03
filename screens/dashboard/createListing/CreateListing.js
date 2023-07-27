@@ -37,9 +37,9 @@ export default function CreateListing({ navigation, route }) {
     setHoursePower(item.horsepower);
     setVehicleType(item.form_factor);
     requestLocationPermission();
-    item.images.forEach(element => {
-      setImages(images.push(element.url_thumbnail))
-    });
+    const imageUrls = item.images.map(element => element.url_thumbnail);
+    setImages(imageUrls)
+    console.log(images)
   }, []);
   const requestLocationPermission = async () => {
     let { status } = await Location.requestForegroundPermissionsAsync();
@@ -71,8 +71,8 @@ export default function CreateListing({ navigation, route }) {
         return;
       }
       setGeocodedCoordinates({ lat: result.latitude, lng: result.longitude });
-      console.log(setGeocodedCoordinates)
-      if(setGeocodedCoordinates.lat != 0 && setGeocodedCoordinates.lng !=0){
+      console.log("cordinates"+setGeocodedCoordinates)
+      if(setGeocodedCoordinates.lat !== "0" && setGeocodedCoordinates.lng !=="0"){
       const listingItem = {
         id: id,
         name: name,
