@@ -8,10 +8,19 @@ import {
 } from "react-native";
 import { db } from "../../utlis/firebaseConfig";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { doc,collection, getDocs, query, where, updateDoc } from "firebase/firestore";
+import {
+  doc,
+  collection,
+  getDocs,
+  query,
+  where,
+  updateDoc,
+} from "firebase/firestore";
 import { useEffect, useState } from "react";
+import { getAuth } from "firebase/auth";
+import { get } from "react-native/Libraries/TurboModule/TurboModuleRegistry";
 
-export default function ManageBooking() {
+export default function ManageBooking({ navigation, route }) {
   const [listing, setListing] = useState([]);
   useEffect(() => {
     retrieveFromDb();
@@ -64,13 +73,13 @@ export default function ManageBooking() {
       const collectionRef = collection(db, "Booking");
       const documentRef = doc(collectionRef, documentId);
       updateDoc(documentRef, dataToUpdate)
-      .then(() => {
-        console.log("Document successfully updated!");
-        retrieveFromDb
-      })
-      .catch((error) => {
-        console.error("Error updating document: ", error);
-      });
+        .then(() => {
+          console.log("Document successfully updated!");
+          retrieveFromDb;
+        })
+        .catch((error) => {
+          console.error("Error updating document: ", error);
+        });
     } catch (err) {
       console.log(err);
     }
@@ -78,12 +87,12 @@ export default function ManageBooking() {
   function generateConfirmationCode(length) {
     const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     let code = "";
-  
+
     for (let i = 0; i < length; i++) {
       const randomIndex = Math.floor(Math.random() * characters.length);
       code += characters.charAt(randomIndex);
     }
-  
+
     return code;
   }
   const renderItem = ({ item }) => (
@@ -111,7 +120,9 @@ export default function ManageBooking() {
       <Text style={styles.bookingStatus}>
         Booking Status: {item.bookingStatus}
       </Text>
-      <Text style={styles.confirmationCode}>Booking Date: {item.bookingDate}</Text>
+      <Text style={styles.confirmationCode}>
+        Booking Date: {item.bookingDate}
+      </Text>
       {item.status === "Approved" && (
         <Text style={styles.confirmationCode}>
           Booking Confirmation Code: {item.confirmationCode}
@@ -127,10 +138,19 @@ export default function ManageBooking() {
       )}
     </View>
   );
+  const logout = () => {
+    getAuth().signOut;
+    navigation.replace("Splash");
+  };
 
   return (
     <View>
-      <Text>My Listing</Text>
+      <View style={styles.topbar}>
+        <Text>My Listing</Text>
+        <Pressable onPress={() => logout()}>
+          <AntDesign name="logout" size={26} color="black" />
+        </Pressable>
+      </View>
       <FlatList
         data={listing}
         renderItem={renderItem}
@@ -145,6 +165,10 @@ const styles = StyleSheet.create({
     padding: 10,
     borderBottomWidth: 1,
     borderBottomColor: "#ccc",
+  },
+  topbar: {
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
   thumbnail: {
     width: 300,
