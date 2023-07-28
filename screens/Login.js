@@ -71,7 +71,7 @@ export default function Login({ navigation, route }) {
   return (
     <SafeAreaView style={styles.container}>
       <Image source={require("../assets/logo.jpg")} style={styles.logo} />
-      <Text style={styles.appName}>Your App Name</Text>
+      <Text style={styles.appName}>Welcome to our owner app</Text>
 
       <View style={styles.inputContainer}>
         <TextInput

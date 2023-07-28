@@ -17,7 +17,7 @@ export default function ListingScreen({navigation,route}) {
   const fetchData = async () => {
     try {
       const response = await fetch(
-        "https://gopa11313.github.io/project_group03/vehicles.json"
+        "https://gopa11313.github.io/project_group03_Api/vehicles.json"
       );
       const json = await response.json();
       setData(json);

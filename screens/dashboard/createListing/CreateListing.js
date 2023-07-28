@@ -39,7 +39,7 @@ export default function CreateListing({ navigation, route }) {
     requestLocationPermission();
     const imageUrls = item.images.map(element => element.url_thumbnail);
     setImages(imageUrls)
-    console.log(images)
+  
   }, []);
   const requestLocationPermission = async () => {
     let { status } = await Location.requestForegroundPermissionsAsync();
@@ -63,6 +63,11 @@ export default function CreateListing({ navigation, route }) {
     try {
       const value = await AsyncStorage.getItem("id");
       const id = value ? JSON.parse(value) : null;
+      const owenerValue = await AsyncStorage.getItem("name")
+      const ownerName = value ? JSON.parse(owenerValue) : null;
+
+      const profileValue = await AsyncStorage.getItem("image")
+      const profileImage = value ? JSON.parse(profileValue) : null;
 
       const geocodedLocation = await Location.geocodeAsync(pickUpLocation);
       const result = geocodedLocation[0];
@@ -84,6 +89,8 @@ export default function CreateListing({ navigation, route }) {
         price: price,
         images: images,
         geocodedCoordinates: geocodedCoordinates,
+        ownerName:ownerName,
+        profileImage:profileImage,
       };
 
       const insertedDocument = await addDoc(

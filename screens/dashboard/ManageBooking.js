@@ -1,8 +1,14 @@
-import { Text, View, FlatList, StyleSheet, Image } from "react-native";
+import {
+  Text,
+  View,
+  FlatList,
+  StyleSheet,
+  Image,
+  Pressable,
+} from "react-native";
 import { db } from "../../utlis/firebaseConfig";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-// 2. Import the relevant functions from firestore
-import { collection, getDocs, query, where } from "firebase/firestore";
+import { doc,collection, getDocs, query, where, updateDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
 
 export default function ManageBooking() {
@@ -15,7 +21,7 @@ export default function ManageBooking() {
     try {
       const value = await AsyncStorage.getItem("id");
       const id = value ? JSON.parse(value) : null;
-      const q = query(collection(db, "Listing"), where("id", "==", id));
+      const q = query(collection(db, "Booking"), where("id", "==", id));
       const querySnapshot = await getDocs(q);
       const resultsFromFirestore = [];
       querySnapshot.forEach((doc) => {
@@ -32,6 +38,54 @@ export default function ManageBooking() {
       console.log(err);
     }
   };
+
+  const approveBooking = async (itemData) => {
+    let documentId = "";
+    try {
+      const value = await AsyncStorage.getItem("id");
+      const id = value ? JSON.parse(value) : null;
+      const q = query(
+        collection(db, "Booking"),
+        where("uniqueId", "==", itemData.uniqueId)
+      );
+      const querySnapshot = await getDocs(q);
+      const resultsFromFirestore = [];
+      querySnapshot.forEach((doc) => {
+        const itemToAdd = {
+          id: doc.id,
+          ...doc.data(),
+        };
+        documentId = doc.id;
+      });
+      const dataToUpdate = {
+        status: "Approved",
+        confirmationCode: generateConfirmationCode(7),
+      };
+      const collectionRef = collection(db, "Booking");
+      const documentRef = doc(collectionRef, documentId);
+      updateDoc(documentRef, dataToUpdate)
+      .then(() => {
+        console.log("Document successfully updated!");
+        retrieveFromDb
+      })
+      .catch((error) => {
+        console.error("Error updating document: ", error);
+      });
+    } catch (err) {
+      console.log(err);
+    }
+  };
+  function generateConfirmationCode(length) {
+    const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    let code = "";
+  
+    for (let i = 0; i < length; i++) {
+      const randomIndex = Math.floor(Math.random() * characters.length);
+      code += characters.charAt(randomIndex);
+    }
+  
+    return code;
+  }
   const renderItem = ({ item }) => (
     <View style={styles.container}>
       <FlatList
@@ -39,33 +93,40 @@ export default function ManageBooking() {
         horizontal
         keyExtractor={(image, index) => index.toString()}
         renderItem={({ item }) => (
-          <Image
-            source={{ uri: item }}
-            style={styles.thumbnail}
-          />
+          <Image source={{ uri: item }} style={styles.thumbnail} />
         )}
       />
       <Text style={styles.makeModel}>
         {item.make} {item.model}
       </Text>
-      <Text style={styles.licensePlate}>
-        License Plate: {item.licensePlate}
-      </Text>
-      <Text style={styles.price}>Price: ${item.price}</Text>
+      <Text style={{ fontWeight: 500, fontSize: 20 }}>Renter Information</Text>
       <View style={styles.renterContainer}>
-        <Image source={{ uri: item.renterPhoto }} style={styles.renterPhoto} />
-        <Text style={styles.renterName}>{item.renterName}</Text>
+        <Image source={{ uri: item.userImage }} style={styles.renterPhoto} />
+        <Text style={styles.text}>{item.userName}</Text>
       </View>
+      <Text style={styles.text}>License Plate: {item.licensePlate}</Text>
+      <Text style={styles.text}>Price: ${item.price}</Text>
+
       <Text style={styles.bookingDate}>Booking Date: {item.bookingDate}</Text>
       <Text style={styles.bookingStatus}>
         Booking Status: {item.bookingStatus}
       </Text>
-      {item.bookingStatus === "Approved" && (
+      <Text style={styles.confirmationCode}>Booking Date: {item.bookingDate}</Text>
+      {item.status === "Approved" && (
         <Text style={styles.confirmationCode}>
           Booking Confirmation Code: {item.confirmationCode}
         </Text>
       )}
-    </View>);
+      {item.status === "Pending" && (
+        <Pressable
+          onPress={() => approveBooking(item)}
+          style={styles.approveBtn}
+        >
+          <Text style={{ color: "white" }}>Approve</Text>
+        </Pressable>
+      )}
+    </View>
+  );
 
   return (
     <View>
@@ -88,16 +149,13 @@ const styles = StyleSheet.create({
   thumbnail: {
     width: 300,
     height: 200,
-    marginTop: 10
+    marginTop: 10,
   },
   makeModel: {
     fontSize: 18,
     fontWeight: "bold",
   },
-  licensePlate: {
-    fontSize: 16,
-  },
-  price: {
+  text: {
     fontSize: 16,
   },
   renterContainer: {
@@ -121,5 +179,14 @@ const styles = StyleSheet.create({
   },
   confirmationCode: {
     fontSize: 16,
+  },
+  approveBtn: {
+    backgroundColor: "green",
+    height: 40,
+    width: 100,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 10,
+    marginTop: 10,
   },
 });
