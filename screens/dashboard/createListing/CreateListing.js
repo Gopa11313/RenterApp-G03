@@ -25,7 +25,9 @@ export default function CreateListing({ navigation, route }) {
   const [licensePlate, setLicensePlate] = useState("");
   const [pickUpLocation, setPickUpLocation] = useState("");
   const [price, setPrice] = useState("");
-
+const  [city, setCity] =useState("");
+const [electric_range,setElectricRange]=useState("");
+const  [msrp,setMsrp] =useState("");
   const [images, setImages] = useState([]);
   const [geocodedCoordinates, setGeocodedCoordinates] = useState({
     lat: 0,
@@ -33,10 +35,12 @@ export default function CreateListing({ navigation, route }) {
   });
   useEffect(() => {
     setName(item.make + " " + item.model + " " + item.trim);
-    setSeatingCapacity(item.seats_min);
+    setSeatingCapacity(item.seats_max);
     setHoursePower(item.horsepower);
     setVehicleType(item.form_factor);
     requestLocationPermission();
+    setElectricRange(item.electric_range)
+    setMsrp(item.electric_range)
     const imageUrls = item.images.map(element => element.url_thumbnail);
     setImages(imageUrls)
   
@@ -59,7 +63,7 @@ export default function CreateListing({ navigation, route }) {
     }
   };
   const addData = async () => {
-    if(pickUpLocation !="" && licensePlate != ""){
+    if(pickUpLocation !="" && licensePlate != "" && city != ""){
     try {
       const value = await AsyncStorage.getItem("id");
       const id = value ? JSON.parse(value) : null;
@@ -76,8 +80,9 @@ export default function CreateListing({ navigation, route }) {
         return;
       }
       setGeocodedCoordinates({ lat: result.latitude, lng: result.longitude });
-      console.log("cordinates"+setGeocodedCoordinates)
-      if(setGeocodedCoordinates.lat !== "0" && setGeocodedCoordinates.lng !=="0"){
+      const canProceed = geocodedCoordinates.lat !== null && geocodedCoordinates.lng !== null;
+      console.log("cordinates Gopal: "+setGeocodedCoordinates)
+      if(canProceed){
       const listingItem = {
         id: id,
         name: name,
@@ -91,6 +96,9 @@ export default function CreateListing({ navigation, route }) {
         geocodedCoordinates: geocodedCoordinates,
         ownerName:ownerName,
         profileImage:profileImage,
+        city:city,
+        electric_range:electric_range,
+        msrp:msrp
       };
 
       const insertedDocument = await addDoc(
@@ -182,6 +190,16 @@ export default function CreateListing({ navigation, route }) {
           value={pickUpLocation}
           onChangeText={setPickUpLocation}
           placeholder="Please Enter the car pick up location"
+          textAlign="right"
+          writingDirection="rtl"
+        />
+      </View>
+      <View style={style.insideView}>
+        <Text> City Name:</Text>
+        <TextInput
+          value={city}
+          onChangeText={setCity}
+          placeholder="Please Enter the city name"
           textAlign="right"
           writingDirection="rtl"
         />

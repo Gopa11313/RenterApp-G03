@@ -19,7 +19,7 @@ import {
 import { useEffect, useState } from "react";
 import { getAuth } from "firebase/auth";
 import { get } from "react-native/Libraries/TurboModule/TurboModuleRegistry";
-
+import { AntDesign } from "@expo/vector-icons";
 export default function ManageBooking({ navigation, route }) {
   const [listing, setListing] = useState([]);
   useEffect(() => {
@@ -84,6 +84,43 @@ export default function ManageBooking({ navigation, route }) {
       console.log(err);
     }
   };
+
+  const rejectbooking= async(itemData)=>{
+    let documentId = "";
+    try {
+      const value = await AsyncStorage.getItem("id");
+      const id = value ? JSON.parse(value) : null;
+      const q = query(
+        collection(db, "Booking"),
+        where("uniqueId", "==", itemData.uniqueId)
+      );
+      const querySnapshot = await getDocs(q);
+      const resultsFromFirestore = [];
+      querySnapshot.forEach((doc) => {
+        const itemToAdd = {
+          id: doc.id,
+          ...doc.data(),
+        };
+        documentId = doc.id;
+      });
+      const dataToUpdate = {
+        status: "Rejected",
+        confirmationCode: generateConfirmationCode(7),
+      };
+      const collectionRef = collection(db, "Booking");
+      const documentRef = doc(collectionRef, documentId);
+      updateDoc(documentRef, dataToUpdate)
+        .then(() => {
+          console.log("Document successfully updated!");
+          retrieveFromDb;
+        })
+        .catch((error) => {
+          console.error("Error updating document: ", error);
+        });
+    } catch (err) {
+      console.log(err);
+    }
+  }
   function generateConfirmationCode(length) {
     const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     let code = "";
@@ -128,13 +165,27 @@ export default function ManageBooking({ navigation, route }) {
           Booking Confirmation Code: {item.confirmationCode}
         </Text>
       )}
+      {item.status === "Rejected" && (
+        <Text style={styles.confirmationCode}>
+          Rejected
+        </Text>
+      )}
       {item.status === "Pending" && (
-        <Pressable
-          onPress={() => approveBooking(item)}
-          style={styles.approveBtn}
-        >
-          <Text style={{ color: "white" }}>Approve</Text>
-        </Pressable>
+        <View style={styles.btns}>
+          <Pressable
+            onPress={() => approveBooking(item)}
+            style={styles.approveBtn}
+          >
+            <Text style={{ color: "white" }}>Approve</Text>
+          </Pressable>
+
+          <Pressable
+            onPress={() => rejectbooking(item)}
+            style={styles.rejectBtn}
+          >
+            <Text style={{ color: "white" }}>Rejected</Text>
+          </Pressable>
+        </View>
       )}
     </View>
   );
@@ -146,9 +197,11 @@ export default function ManageBooking({ navigation, route }) {
   return (
     <View>
       <View style={styles.topbar}>
-        <Text>My Listing</Text>
+        <Text style={{ fontSize: 20, fontWeight: 400 }}>
+          Manage your Booking
+        </Text>
         <Pressable onPress={() => logout()}>
-          <AntDesign name="logout" size={26} color="black" />
+          <AntDesign name="logout" size={26} color="red" />
         </Pressable>
       </View>
       <FlatList
@@ -165,9 +218,11 @@ const styles = StyleSheet.create({
     padding: 10,
     borderBottomWidth: 1,
     borderBottomColor: "#ccc",
+    marginBottom:50
   },
   topbar: {
     flexDirection: "row",
+    padding: 10,
     justifyContent: "space-between",
   },
   thumbnail: {
@@ -204,6 +259,10 @@ const styles = StyleSheet.create({
   confirmationCode: {
     fontSize: 16,
   },
+  rejected:{
+    fontSize: 16,
+    fontFamily:"red"
+  },
   approveBtn: {
     backgroundColor: "green",
     height: 40,
@@ -213,4 +272,17 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginTop: 10,
   },
+  rejectBtn: {
+    backgroundColor: "red",
+    height: 40,
+    width: 100,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 10,
+    marginTop: 10,
+  },
+  btns:{
+    flexDirection:"row",
+    marginLeft:10
+  }
 });
